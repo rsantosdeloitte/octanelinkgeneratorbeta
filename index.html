@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Gerador de Link Octane</title>
+  <title>Gerador de Link Octane 🔗</title>
   <style>
     :root {
       --bg-light: #f2f2f2;
@@ -15,7 +15,7 @@
 
     body {
       font-family: Arial, sans-serif;
-      padding: 40px 20px;
+      padding: 40px 20px 60px;
       max-width: 500px;
       margin: auto;
       background-color: var(--bg-light);
@@ -42,35 +42,52 @@
       cursor: pointer;
     }
 
-    input {
+    input, button {
       padding: 10px;
-      font-size: 16px;
+      font-size: 14px;
       margin-top: 10px;
+      border-radius: 4px;
+      outline: none;
+    }
+
+    input:focus, button:focus {
+      border: 2px solid var(--accent);
+      box-shadow: 0 0 5px var(--accent);
+    }
+
+    input {
       width: 100%;
       box-sizing: border-box;
+      border: 1px solid #ccc;
     }
 
     button {
-      font-size: 14px;
-      padding: 6px 12px;
-      margin-top: 10px;
-      margin-right: 5px;
       background-color: var(--accent);
       color: white;
       border: none;
-      border-radius: 4px;
+      margin-right: 5px;
       cursor: pointer;
     }
 
-   #resultado {
-    margin-top: 20px;
-    /*font-weight: bold;*/
-    padding: 10px;
-    border-radius: 4px;
-    font-size: 13px;             /* Fonte menor */
-    /*overflow-x: auto;*/          /* Scroll horizontal */
-    white-space: nowrap;         /* Impede quebra de linha */
+    .selector-btn {
+      background-color: transparent;
+      border: 1px solid var(--accent);
+      color: inherit;
     }
+
+    .selector-btn.active {
+      background-color: var(--accent);
+      color: white;
+    }
+
+    #resultado {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
     .light-link a {
       color: var(--text-light);
     }
@@ -108,15 +125,48 @@
       from { bottom: 30px; opacity: 1; }
       to { bottom: 0; opacity: 0; }
     }
+
+    footer {
+      text-align: center;
+      font-size: 13px;
+      margin-top: 40px;
+      opacity: 0.6;
+    }
+
+    /* EFEITO DE DESTAQUE */
+    #taskId.destaque-focus {
+      border: 2px solid var(--accent);
+      border-radius: 6px;
+      box-shadow: 0 0 8px var(--accent);
+      position: relative;
+      z-index: 1001;
+      background-color: #fff;
+    }
+
+    #focoOverlay {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.6);
+      z-index: 1000;
+      display: none;
+    }
   </style>
 </head>
 <body>
+  <div id="focoOverlay" onclick="removerFoco()"></div>
+
   <button id="toggleThemeBtn" onclick="alternarTema()">🌙 Modo Escuro</button>
 
   <h2>Gerador de Link Octane 🔗</h2>
 
-  <label for="taskId">Informe o ID da Task:</label>
-  <input type="text" id="taskId" placeholder="Ex: 123456">
+  <div>
+    <button class="selector-btn active" id="btnTask" onclick="selecionarTipo('task')">Task</button>
+    <button class="selector-btn" id="btnStory" onclick="selecionarTipo('userstory')">User Story</button>
+  </div>
+  <br>
+
+  <label for="taskId">Informe o ID:</label>
+  <input type="text" id="taskId" placeholder="Ex: 12345">
 
   <div>
     <button onclick="gerarLink()">⚙️ Gerar Link</button>
@@ -124,26 +174,44 @@
   </div>
 
   <div id="resultado"></div>
-
   <div id="toast">Link copiado com sucesso!</div>
+
+  <footer>
+    Links gerados: <span id="contador">0</span>
+  </footer>
 
   <script>
     let linkGerado = '';
     let modoEscuro = false;
+    let tipoEntidade = 'task';
+    let contadorLinks = 0;
+
+    function selecionarTipo(tipo) {
+      tipoEntidade = tipo;
+      document.getElementById('btnTask').classList.toggle('active', tipo === 'task');
+      document.getElementById('btnStory').classList.toggle('active', tipo === 'userstory');
+    }
 
     function gerarLink() {
       const taskId = document.getElementById('taskId').value.trim();
       const resultado = document.getElementById('resultado');
       if (taskId === "") {
-        alert("Por favor, informe o ID da Task!");
+        alert("Por favor, informe a ID da Task/User Story");
         return;
       }
 
-      linkGerado = `https://octane.deloitte.com/ui/entity-navigation?p=27001/46003&entityType=task&id=${taskId}`;
+      const entityParam = tipoEntidade === 'task'
+        ? `entityType=task&id=${taskId}`
+        : `entityType=work_item&id=${taskId}`;
+
+      linkGerado = `https://octane.deloitte.com/ui/entity-navigation?p=27001/46003&${entityParam}`;
 
       resultado.className = modoEscuro ? 'dark-link' : 'light-link';
       resultado.innerHTML = `<a href="${linkGerado}" target="_blank">${linkGerado}</a>`;
       document.getElementById('copiarBtn').style.display = 'inline-block';
+
+      contadorLinks++;
+      document.getElementById('contador').textContent = contadorLinks;
     }
 
     function copiarLink() {
@@ -165,11 +233,33 @@
       const btn = document.getElementById("toggleThemeBtn");
       btn.innerText = modoEscuro ? "☀️ Modo Claro" : "🌙 Modo Escuro";
 
-      // Atualiza a cor do link se ele já estiver visível
-      const resultado = document.getElementById("resultado");
       if (linkGerado) {
+        const resultado = document.getElementById("resultado");
         resultado.className = modoEscuro ? 'dark-link' : 'light-link';
       }
+
+      const logoClaro = document.getElementById("logoClaro");
+      const logoEscuro = document.getElementById("logoEscuro");
+      if (logoClaro && logoEscuro) {
+        logoClaro.style.display = modoEscuro ? "none" : "inline";
+        logoEscuro.style.display = modoEscuro ? "inline" : "none";
+      }
+    }
+
+    // Destaque campo + escurecer fundo
+   // const campoId = document.getElementById("taskId");
+   // const overlay = document.getElementById("focoOverlay");
+
+    //campoId.addEventListener("focus", () => {
+    //  campoId.classList.add("destaque-focus");
+  //    overlay.style.display = "block";
+    //});
+
+    campoId.addEventListener("blur", removerFoco);
+
+    function removerFoco() {
+      campoId.classList.remove("destaque-focus");
+      overlay.style.display = "none";
     }
   </script>
 </body>
